@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CinePass — Cinema Ticket Booking System</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <span class="brand-icon">🎟️</span>
+        <div class="brand-text">
+          <span class="brand-title">CinePass</span>
+          <span class="brand-subtitle">Ticket Reservation System</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Live Polling Toggle & Refresh -->
+        <div class="sync-controls">
+          <button id="btn-refresh" class="btn-icon" title="Refresh data now">
+            <span class="refresh-icon">🔄</span>
+            <span class="refresh-label">Refresh</span>
+          </button>
+          <label class="toggle-switch" title="Auto-refresh every 3 seconds">
+            <input type="checkbox" id="auto-refresh-toggle" checked>
+            <span class="slider"></span>
+            <span class="toggle-label">Live Sync</span>
+          </label>
+        </div>
+
+        <!-- Active User Switcher -->
+        <div class="user-selector-wrapper">
+          <span class="user-label">Active User:</span>
+          <div class="user-pill-group">
+            <button class="user-pill active" data-user="user1">
+              <span class="avatar">👤</span> User 1
+            </button>
+            <button class="user-pill" data-user="user2">
+              <span class="avatar">👤</span> User 2
+            </button>
+            <button class="user-pill" data-user="user3">
+              <span class="avatar">👤</span> User 3
+            </button>
+          </div>
+          <div class="custom-user-input">
+            <input type="text" id="custom-user-id" placeholder="Custom user ID..." value="user1">
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="main-container">
+    
+    <!-- Show & Movie Info Banner -->
+    <section class="show-banner">
+      <div class="banner-content">
+        <div class="show-badge">FEATURED SHOW • <span id="show-id-display">SHOW001</span></div>
+        <h1 class="movie-title">Interstellar (2014)</h1>
+        <p class="movie-meta">
+          <span>🕒 07:30 PM (Tonight)</span>
+          <span>📍 IMAX Theater 1 — 70mm Special</span>
+          <span>💲 $14.50 / seat</span>
+          <span>⏳ 5-Min Hold Window</span>
+        </p>
+      </div>
+
+      <!-- Real-time KPI Stats -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">Total Seats</span>
+          <span class="kpi-value" id="kpi-total">3</span>
+        </div>
+        <div class="kpi-card available">
+          <span class="kpi-label">Available</span>
+          <span class="kpi-value" id="kpi-available">0</span>
+        </div>
+        <div class="kpi-card held">
+          <span class="kpi-label">Held</span>
+          <span class="kpi-value" id="kpi-held">0</span>
+        </div>
+        <div class="kpi-card booked">
+          <span class="kpi-label">Booked</span>
+          <span class="kpi-value" id="kpi-booked">0</span>
+        </div>
+        <div class="kpi-card waitlist">
+          <span class="kpi-label">Waitlist</span>
+          <span class="kpi-value" id="kpi-waitlist">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Workspace: Seating Chart & Details Panel -->
+    <div class="workspace-grid">
+      
+      <!-- Left Column: Cinema Seating Plan -->
+      <div class="seat-chart-card">
+        <div class="card-header">
+          <h2>Seating Layout</h2>
+          <span class="status-indicator live" id="live-indicator">
+            <span class="dot"></span> Live Updates
+          </span>
+        </div>
+
+        <!-- Curved Screen Visual -->
+        <div class="screen-container">
+          <div class="cinema-screen"></div>
+          <p class="screen-label">CINEMA SCREEN</p>
+        </div>
+
+        <!-- Seats Grid -->
+        <div class="seats-container" id="seats-container">
+          <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading real-time seat status from backend...</p>
+          </div>
+        </div>
+
+        <!-- Seat Legend -->
+        <div class="legend-container">
+          <div class="legend-item">
+            <span class="legend-box available"></span>
+            <span>Available</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-box held"></span>
+            <span>Held (5m Expiry)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-box booked"></span>
+            <span>Booked</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-box selected"></span>
+            <span>Selected</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Contextual Action & Booking Drawer -->
+      <div class="sidebar-column">
+        
+        <!-- Action Drawer Card -->
+        <div class="action-card">
+          <div class="card-header">
+            <h3>Seat Action Center</h3>
+            <span class="badge" id="selected-seat-badge">No Seat Selected</span>
+          </div>
+
+          <div class="action-body" id="action-body">
+            <div class="no-seat-selected" id="no-seat-prompt">
+              <span class="prompt-icon">👈</span>
+              <p>Click on any seat from the seating chart to hold, book, cancel, or join the waitlist.</p>
+            </div>
+
+            <!-- Active Seat Inspection Details (Hidden until selected) -->
+            <div class="seat-details-panel hidden" id="seat-details-panel">
+              <div class="detail-row">
+                <span class="detail-label">Seat Number:</span>
+                <span class="detail-val highlight" id="detail-seat-num">-</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Current Status:</span>
+                <span class="status-pill" id="detail-seat-status">-</span>
+              </div>
+              <div class="detail-row" id="detail-holder-row">
+                <span class="detail-label">Held By:</span>
+                <span class="detail-val" id="detail-held-by">-</span>
+              </div>
+              <div class="detail-row" id="detail-expiry-row">
+                <span class="detail-label">Hold Expiration:</span>
+                <span class="detail-val countdown-text" id="detail-expiry-time">-</span>
+              </div>
+
+              <!-- Contextual Action Buttons -->
+              <div class="action-buttons-group" id="action-buttons-group">
+                <!-- Hold Button -->
+                <button id="btn-hold" class="btn btn-warning btn-block">
+                  <span class="btn-icon">⏱️</span> Hold Seat (5 Mins)
+                </button>
+
+                <!-- Book Button -->
+                <button id="btn-book" class="btn btn-success btn-block">
+                  <span class="btn-icon">💳</span> Confirm Booking
+                </button>
+
+                <!-- Cancel Button -->
+                <button id="btn-cancel" class="btn btn-danger btn-block">
+                  <span class="btn-icon">❌</span> Cancel Booking
+                </button>
+
+                <!-- Join Waitlist Button -->
+                <button id="btn-waitlist" class="btn btn-purple btn-block">
+                  <span class="btn-icon">📋</span> Join Waitlist
+                </button>
+              </div>
+
+              <!-- Contextual Helper Text / Advice -->
+              <div class="context-tip" id="context-tip"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Waitlist & Queue Panel -->
+        <div class="waitlist-card">
+          <div class="card-header">
+            <h3>Waitlist Queue</h3>
+            <span class="badge" id="waitlist-count-badge">0 users</span>
+          </div>
+          <div class="waitlist-body">
+            <div class="waitlist-quick-form">
+              <div class="input-group">
+                <label for="waitlist-seat-select">Seat:</label>
+                <select id="waitlist-seat-select">
+                  <option value="A1">Seat A1</option>
+                  <option value="A2">Seat A2</option>
+                  <option value="A3">Seat A3</option>
+                </select>
+              </div>
+              <button id="btn-direct-waitlist" class="btn btn-secondary btn-sm">
+                Join Queue
+              </button>
+            </div>
+
+            <!-- Waitlist List -->
+            <div class="waitlist-items-container" id="waitlist-items-container">
+              <p class="empty-list">No users currently in the waitlist queue.</p>
+            </div>
+            
+            <div class="waitlist-notice">
+              ℹ️ <strong>Auto-Assignment:</strong> When a booking is cancelled, the first user in line automatically receives a 5-minute hold!
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom Section: User's Active Bookings & Live Activity Log -->
+    <div class="bottom-grid">
+      
+      <!-- My Bookings Card -->
+      <div class="bookings-card">
+        <div class="card-header">
+          <h3>My Confirmed Bookings (<span id="user-booking-id">user1</span>)</h3>
+          <button id="btn-refresh-bookings" class="btn-icon-sm" title="Refresh bookings">🔄</button>
+        </div>
+        <div class="bookings-body" id="user-bookings-list">
+          <p class="empty-list">No confirmed bookings found for this user.</p>
+        </div>
+      </div>
+
+      <!-- Live Activity Log Card -->
+      <div class="activity-card">
+        <div class="card-header">
+          <h3>Live Activity Stream</h3>
+          <button id="btn-clear-activity" class="btn-icon-sm" title="Clear log">🗑️</button>
+        </div>
+        <div class="activity-body" id="activity-log">
+          <div class="log-entry info">
+            <span class="log-time">Now</span>
+            <span class="log-text">Frontend initialized and connected to Spring Boot backend (port 8081).</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <span>CinePass Ticket Booking System • Spring Boot 3 + MongoDB Backend on Port 8081</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
